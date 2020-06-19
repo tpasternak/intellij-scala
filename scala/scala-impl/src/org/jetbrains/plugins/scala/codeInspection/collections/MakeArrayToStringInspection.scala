@@ -20,7 +20,7 @@ object MakeArrayToStringInspection extends SimplificationType {
 
   override def getSimplification(expr: ScExpression): Option[Simplification] = {
     expr match {
-      case array `.toString` () if isArray(array) =>
+      case array `.toString` Seq() if isArray(array) =>
         // array.toString
         Some(replace(expr).withText(invocationText(array, mkString)).highlightFrom(array))
       case someString `+` array if isString(someString) && isArray(array) =>

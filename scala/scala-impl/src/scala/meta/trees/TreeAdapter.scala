@@ -197,8 +197,8 @@ trait TreeAdapter {
   }
 
   def template(t: p.toplevel.templates.ScExtendsBlock): m.Template = {
-    val exprs   = t.templateBody map (it => Seq(it.exprs.map(expression): _*))
-    val members = t.templateBody map (it => it.members.map(ideaToMeta(_).asInstanceOf[m.Stat]).toList)
+    val exprs   = t.templateBody.map (it => List(it.exprs.map(expression): _*))
+    val members = t.templateBody.map (it => it.members.map(ideaToMeta(_).asInstanceOf[m.Stat]).toList)
     val early   = t.earlyDefinitions.map (it => it.members.map(ideaToMeta(_).asInstanceOf[m.Stat]).toList).getOrElse(Nil)
     val ctor = t.templateParents
       .flatMap(_.children.find(_.isInstanceOf[ScConstructorInvocation]))
@@ -211,10 +211,10 @@ trait TreeAdapter {
     }
     // FIXME: preserve expression and member order
     val stats = (exprs, members) match {
-      case (Some(exp), Some(hld)) => Some(hld ++ exp)
-      case (Some(exp), None)  => Some(exp)
-      case (None, Some(hld))  => Some(hld)
-      case (None, None)       => None
+      case (Some(exp), Some(hld)) => hld ++ exp
+      case (Some(exp), None)  => exp
+      case (None, Some(hld))  => hld
+      case (None, None)       => Nil
     }
     m.Template(early, ctor ++ mixins, self, stats)
   }
@@ -242,7 +242,7 @@ trait TreeAdapter {
       case None                    =>
         m.Term.Param(Nil, m.Name.Anonymous(), None, None)
     }
-    m.Template(early, List(ctor), self, None)
+    m.Template(early, List(ctor), self, Nil)
   }
 
   def toCtor(constrInvocation: ScConstructorInvocation): m.Ctor.Call = {
@@ -399,12 +399,12 @@ trait TreeAdapter {
         case _ => unreachable
       }
     }
-    en.children.collect { case enum: ScEnumerator => enum }.map(toEnumerator).toSeq
+    en.children.collect { case enum: ScEnumerator => enum }.map(toEnumerator).toList
   }
 
-  def toParams(argss: Seq[ScArgumentExprList]): List[List[m.Term.Param]] = {
-    argss.toStream map { args =>
-      args.matchedParameters.toStream map { case (_, param) =>
+  def toParams(argss: List[ScArgumentExprList]): List[List[m.Term.Param]] = {
+    argss.map { args =>
+      args.matchedParameters.toList map { case (_, param) =>
         m.Term.Param(param.psiParam.map(p => convertMods(p.getModifierList)).getOrElse(Seq.empty), toParamName(param), Some(toType(param.paramType)), None)
       }
     }

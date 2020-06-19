@@ -3,20 +3,13 @@ package org.jetbrains.plugins.scala.annotator.quickfix
 import com.intellij.openapi.editor.Editor
 import com.intellij.psi.PsiNamedElement
 import org.jetbrains.plugins.scala.ScalaBundle
-import org.jetbrains.plugins.scala.annotator.intention.ImplicitToImport
-import org.jetbrains.plugins.scala.annotator.intention.PopupPosition
-import org.jetbrains.plugins.scala.annotator.intention.ScalaAddImportAction
-import org.jetbrains.plugins.scala.annotator.intention.ScalaImportElementFix
+import org.jetbrains.plugins.scala.annotator.intention.{ImplicitToImport, PopupPosition, ScalaAddImportAction, ScalaImportElementFix}
 import org.jetbrains.plugins.scala.extensions.PsiElementExt
-import org.jetbrains.plugins.scala.extensions.SeqExt
 import org.jetbrains.plugins.scala.lang.psi.api.ImplicitArgumentsOwner
-import org.jetbrains.plugins.scala.lang.psi.implicits.GlobalImplicitInstance
-import org.jetbrains.plugins.scala.lang.psi.implicits.ImplicitCollector
+import org.jetbrains.plugins.scala.lang.psi.implicits.{GlobalImplicitInstance, ImplicitCollector}
 import org.jetbrains.plugins.scala.lang.psi.types.ScType
 import org.jetbrains.plugins.scala.lang.psi.types.api.FunctionType
 import org.jetbrains.plugins.scala.lang.resolve.ScalaResolveResult
-
-import scala.collection.Seq
 
 final class ImportImplicitInstanceFix private (found: Seq[FoundImplicit],
                                                owner: ImplicitArgumentsOwner,
@@ -48,7 +41,7 @@ case class FoundImplicit(instance: GlobalImplicitInstance, path: Seq[ScalaResolv
 object ImportImplicitInstanceFix {
   private case class TypeToSearch(path: Seq[ScalaResolveResult], scType: ScType)
 
-  def apply(notFoundImplicitParams: Seq[ScalaResolveResult],
+  def apply(notFoundImplicitParams: collection.Seq[ScalaResolveResult],
             owner: ImplicitArgumentsOwner,
             popupPosition: PopupPosition = PopupPosition.best): Option[ImportImplicitInstanceFix] = {
 
@@ -74,7 +67,7 @@ object ImportImplicitInstanceFix {
 
   private def withProbableArguments(prefix: Seq[ScalaResolveResult],
                                     parameter: ScalaResolveResult,
-                                    visited: Set[PsiNamedElement] = Set.empty): Seq[TypeToSearch] = {
+                                    visited: Set[PsiNamedElement] = Set.empty): collection.Seq[TypeToSearch] = {
     if (visited(parameter.element))
       return Seq.empty
 
