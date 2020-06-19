@@ -13,7 +13,7 @@ object Versions {
   val bspVersion = "2.0.0-M11+12-6a67fd76-SNAPSHOT"
   val sbtStructureVersion: String = "2020.2+2-b4bf15a0"
   val sbtIdeaShellVersion: String = "2018.3"
-  val sbtIdeaCompilerIndicesVersion = "0.2+12-f21cf3b3-SNAPSHOT"
+  val compilerIndicesVersion = "1.0.4"
   val scalaMetaVersion = "4.3.12"
   val paradiseVersion = "3.0.0-M11"
 
@@ -110,7 +110,7 @@ object Dependencies {
   // when updating the version, do not forget to:
   //  1. update version in the sbt-idea-compiler indices plugin too
   //  2. update version in scala-plugin-common.xml compilerServer.plugin classpath setting
-  val compilerIndicesProtocol: ModuleID = "org.jetbrains" %% "scala-compiler-indices-protocol" % sbtIdeaCompilerIndicesVersion
+  val compilerIndicesProtocol: ModuleID = "org.jetbrains.scala" %% "scala-compiler-indices-protocol" % compilerIndicesVersion
 
   val nailgun: ModuleID = "org.jetbrains" % "nailgun-patched" % "1.0.1"
   val zinc = "org.scala-sbt" %% "zinc" % zincVersion

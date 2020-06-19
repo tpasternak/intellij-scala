@@ -147,7 +147,7 @@ lazy val scalaImpl: sbt.Project =
         BuildInfoKey.constant("bloopVersion", Versions.bloopVersion),
         BuildInfoKey.constant("sbtStructureVersion", Versions.sbtStructureVersion),
         BuildInfoKey.constant("sbtIdeaShellVersion", Versions.sbtIdeaShellVersion),
-        BuildInfoKey.constant("sbtIdeaCompilerIndicesVersion", Versions.sbtIdeaCompilerIndicesVersion),
+        BuildInfoKey.constant("sbtIdeaCompilerIndicesVersion", Versions.compilerIndicesVersion),
         BuildInfoKey.constant("sbtLatest_0_12", Versions.Sbt.latest_0_12),
         BuildInfoKey.constant("sbtLatest_0_13", Versions.Sbt.latest_0_13),
         BuildInfoKey.constant("sbtLatest_1_0", Versions.Sbt.latest_1_0),
@@ -305,7 +305,7 @@ lazy val javaDecompilerIntegration =
 val localRepoArtifacts =
   (sbtStructureExtractor.name,  Versions.sbtStructureVersion) ::
   ("sbt-idea-shell",            Versions.sbtIdeaShellVersion) ::
-  ("sbt-idea-compiler-indices", Versions.sbtIdeaCompilerIndicesVersion) :: Nil
+  ("sbt-idea-compiler-indices", Versions.compilerIndicesVersion) :: Nil
 val localRepoPaths = LocalRepoPackager.localPluginRepoPaths(localRepoArtifacts)
 
 lazy val runtimeDependencies =
