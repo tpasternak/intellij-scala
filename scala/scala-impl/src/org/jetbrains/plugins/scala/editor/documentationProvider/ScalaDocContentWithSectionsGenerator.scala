@@ -75,7 +75,7 @@ private class ScalaDocContentWithSectionsGenerator(
     }
   }
 
-  private def appendSections(sections: Seq[Section], result: StringBuilder): Unit =
+  private def appendSections(sections: Iterable[Section], result: StringBuilder): Unit =
     sections.foreach { section =>
       import DocumentationMarkup._
       result
@@ -87,7 +87,7 @@ private class ScalaDocContentWithSectionsGenerator(
     }
 
 
-  private def buildSections(tags: Seq[ScDocTag]): Seq[Section] = {
+  private def buildSections(tags: Seq[ScDocTag]): collection.Seq[Section] = {
     val sections = ArrayBuffer.empty[Section]
 
     sections ++= prepareSimpleSections(tags, MyScaladocParsing.DEPRECATED_TAG, ScalaEditorBundle.message("scaladoc.section.deprecated"))

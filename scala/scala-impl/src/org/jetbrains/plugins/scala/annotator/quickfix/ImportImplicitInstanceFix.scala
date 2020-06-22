@@ -11,12 +11,12 @@ import org.jetbrains.plugins.scala.lang.psi.types.ScType
 import org.jetbrains.plugins.scala.lang.psi.types.api.FunctionType
 import org.jetbrains.plugins.scala.lang.resolve.ScalaResolveResult
 
-final class ImportImplicitInstanceFix private (found: Seq[FoundImplicit],
+final class ImportImplicitInstanceFix private (found: collection.Seq[FoundImplicit],
                                                owner: ImplicitArgumentsOwner,
                                                popupPosition: PopupPosition)
   extends ScalaImportElementFix(owner) {
 
-  override val elements: Seq[ImplicitToImport] = found.map(ImplicitToImport)
+  override val elements: Seq[ImplicitToImport] = found.map(ImplicitToImport).toSeq
 
   override def shouldShowHint(): Boolean = false
 
