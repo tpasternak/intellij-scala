@@ -1187,24 +1187,28 @@ class ScalaBugsTest extends AbstractScalaFormatterTestBase {
     val before =
       """
         |/**
-        |  *    Pooly formatted scalaDoc.
+        |  *    Poorly formatted scalaDoc.
         |    *Will still be formatted poorly.
         |
         |*                If formatting
         |   is disabled.
         |  Asterisks will be aligned and added though, like in java.
+        | *{@link qweqwe}
+        | *@since 42
         |   */
       """.stripMargin
 
     val after =
       """
         |/**
-        | *    Pooly formatted scalaDoc.
+        | *    Poorly formatted scalaDoc.
         | *Will still be formatted poorly.
         | *
         | *                If formatting
         | *is disabled.
         | *Asterisks will be aligned and added though, like in java.
+        | *{@link qweqwe}
+        | *@since 42
         | */
       """.stripMargin
 
@@ -1747,76 +1751,6 @@ class ScalaBugsTest extends AbstractScalaFormatterTestBase {
         |if (false) { //comment without before whitespace
         |  val x = 42
         |}
-      """.stripMargin
-
-    doTextTest(before, after)
-  }
-
-  def testSCL6599(): Unit = {
-    val before =
-      """"
-        |/**
-        | * Description
-        | *
-        | * == header ==
-        | *
-        | * - list item 1
-        | *   line 2
-        | *  - list item 1.1
-        | *    line 2
-        | *  - list item 1.2
-        | *    line 2
-        | * 1. 1
-        | * line 2
-        | *  1.1 1.1
-        | *  line 2
-        | * 2. 2
-        | * i. 1
-        | *    line 2
-        | *  i. 1.1
-        | * ii. 2
-        | * A. 1
-        | * B. 2
-        | *   B. 3
-        | *  line 2
-        | * a. 1
-        | *   c. 1.1
-        | * b. 2
-        | */
-        |val a = 42
-      """.stripMargin
-
-    val after =
-      """"
-        |/**
-        | * Description
-        | *
-        | * == header ==
-        | *
-        | * - list item 1
-        | * line 2
-        | *  - list item 1.1
-        | * line 2
-        | *  - list item 1.2
-        | * line 2
-        | * 1. 1
-        | * line 2
-        | *  1.1 1.1
-        | * line 2
-        | * 2. 2
-        | * i. 1
-        | * line 2
-        | *  i. 1.1
-        | * ii. 2
-        | * A. 1
-        | * B. 2
-        | *   B. 3
-        | * line 2
-        | * a. 1
-        | *   c. 1.1
-        | * b. 2
-        | */
-        |val a = 42
       """.stripMargin
 
     doTextTest(before, after)

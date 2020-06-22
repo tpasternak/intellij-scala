@@ -783,6 +783,10 @@ object ScalaPsiElementFactory {
     createElementWithContext[ScStableCodeReference](text, context, child) {
       types.StableId.parse(_, parser.ScalaElementType.REFERENCE)
     }
+  def createDocReferenceFromText(@NonNls text: String, context: PsiElement, child: PsiElement): ScStableCodeReference =
+    createElementWithContext[ScDocResolvableCodeReference](text, context, child) {
+      types.StableId.parse(_, parser.ScalaElementType.DOC_REFERENCE)
+    }
 
   // TODO method should be eliminated eventually
   def createExpressionWithContextFromText(@NonNls text: String, context: PsiElement, child: PsiElement): ScExpression = {
@@ -944,8 +948,10 @@ object ScalaPsiElementFactory {
     children(1).getLastChildNode.getPsi
   }
 
-  def createDocWhiteSpace(implicit ctx: ProjectContext): PsiElement =
-    createDocCommentFromText(" *").getNode.getChildren(null)(1).getPsi
+  def createDocWhiteSpaceWithNewLine(implicit ctx: ProjectContext): PsiElement = {
+    val node = createDocComment(s"/**\n *\n*/").getNode
+    node.getChildren(null)(1).getPsi
+  }
 
   def createLeadingAsterisk(implicit ctx: ProjectContext): PsiElement =
     createDocCommentFromText(" *").getNode.getChildren(null)(2).getPsi
