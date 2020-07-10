@@ -1,8 +1,9 @@
 package org.jetbrains.bsp.project.resolver
 
 import java.io.File
+import java.nio.file.Paths
 import java.util.Collections
-import java.util.concurrent.CompletableFuture
+import java.util.concurrent.{CompletableFuture, TimeUnit}
 
 import ch.epfl.scala.bsp4j._
 import com.intellij.build.events.impl.SuccessResultImpl
@@ -29,7 +30,7 @@ import org.jetbrains.plugins.scala.project.Version
 import org.jetbrains.sbt.SbtUtil.{detectSbtVersion, getDefaultLauncher, sbtVersionParam, upgradedSbtVersion}
 import org.jetbrains.sbt.project.SbtProjectResolver.ImportCancelledException
 import org.jetbrains.sbt.project.structure.{Cancellable, MillPreImporter, SbtStructureDump}
-import org.jetbrains.sbt.project.{MillProjectImportProvider, SbtExternalSystemManager, SbtProjectImportProvider}
+import org.jetbrains.sbt.project.{MillProjectImportProvider, PantsBspProjectImportProvider, SbtExternalSystemManager, SbtProjectImportProvider}
 import org.jetbrains.sbt.{Sbt, SbtUtil}
 
 import scala.annotation.tailrec
@@ -127,7 +128,7 @@ class BspProjectResolver extends ExternalSystemProjectResolver[BspExecutionSetti
     // special handling for sbt projects: run bloopInstall first
     // TODO support other bloop-enabled build tools as well
     val vfile = LocalFileSystem.getInstance().findFileByIoFile(workspace)
-    val sbtMessages =
+    val sbtMessages: Try[BuildMessages] =
       if (
         executionSettings.runPreImportTask &&
         BspConnectionConfig.workspaceConfigurations(workspace).isEmpty) {
@@ -136,16 +137,19 @@ class BspProjectResolver extends ExternalSystemProjectResolver[BspExecutionSetti
             runBloopInstall(workspace)
           else if (MillProjectImportProvider.canImport(vfile))
             runMillBspInstall(workspace)
+          else if (PantsBspProjectImportProvider.canImport(vfile))
+            PantsBspProjectImportProvider.install(workspace)
           else
             Success(BuildMessages.empty.status(BuildMessages.OK))
       } else Success(BuildMessages.empty.status(BuildMessages.OK))
 
-    val communication = BspCommunication.forWorkspace(workspace)
+    val bspWorkspace = if(PantsBspProjectImportProvider.canImport(vfile)) PantsBspProjectImportProvider.resolveBspWorkspace(vfile)else workspace
+    val communication = BspCommunication.forWorkspace(bspWorkspace)
     importState = BspTask(communication)
 
     sbtMessages match {
       case Success(messages) if messages.status == BuildMessages.OK =>
-        val projectJob: BspJob[(DataNode[ProjectData], BuildMessages)] = communication.run(requests(workspace)(_,_,reporter),BuildMessages.empty, notifications, reporter.log)
+        val projectJob: BspJob[(DataNode[ProjectData], BuildMessages)] = communication.run(requests(bspWorkspace)(_,_,reporter),BuildMessages.empty, notifications, reporter.log)
         waitForProjectCancelable(projectJob) match {
           case Success((data, _)) =>
             reporter.finish(messages)

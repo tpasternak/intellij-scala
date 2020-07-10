@@ -14,6 +14,7 @@ import com.intellij.openapi.externalSystem.util.ExternalSystemApiUtil
 import com.intellij.openapi.module.StdModuleTypes
 import com.intellij.openapi.roots.DependencyScope
 import com.intellij.openapi.util.io.FileUtil
+import com.intellij.openapi.vfs.LocalFileSystem
 import org.jetbrains.bsp.BspUtil._
 import org.jetbrains.bsp.data._
 import org.jetbrains.bsp.project.BspSyntheticModuleType
@@ -21,6 +22,7 @@ import org.jetbrains.bsp.project.resolver.BspResolverDescriptors._
 import org.jetbrains.bsp.{BSP, BspBundle}
 import org.jetbrains.plugins.scala.project.Version
 import org.jetbrains.plugins.scala.project.external.{JdkByHome, JdkByVersion}
+import org.jetbrains.sbt.project.PantsBspProjectImportProvider
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -422,12 +424,14 @@ private[resolver] object BspResolverLogic {
 
   private[resolver] def projectNode(workspace: File,
                                     projectModules: ProjectModules,
-                                    excludedPaths: List[File]
+                                    excludedPaths: List[File],
                                    ): DataNode[ProjectData] = {
 
     val projectRootPath = workspace.getCanonicalPath
+    val projectRootVFile = LocalFileSystem.getInstance().findFileByIoFile(workspace)
     val moduleFilesDirectoryPath = moduleFilesDirectory(workspace).getCanonicalPath
     val projectRoot = new File(projectRootPath)
+    val bspWorkspaceRoot: File = if(PantsBspProjectImportProvider.canImport(projectRootVFile)) PantsBspProjectImportProvider.resolveBspWorkspace(projectRootVFile) else workspace
     val projectData = new ProjectData(BSP.ProjectSystemId, projectRoot.getName, projectRootPath, projectRootPath)
     val projectNode = new DataNode[ProjectData](ProjectKeys.PROJECT, projectData, null)
 
@@ -436,7 +440,7 @@ private[resolver] object BspResolverLogic {
       if (projectModules.modules.exists (_.data.basePath.exists(_ == projectRoot))) None
       else {
         val name = projectRoot.getName + "-root"
-        val moduleData = new ModuleData(name, BSP.ProjectSystemId, BspSyntheticModuleType.Id, name, moduleFilesDirectoryPath, projectRootPath)
+        val moduleData = new ModuleData(name, BSP.ProjectSystemId, BspSyntheticModuleType.Id, name, bspWorkspaceRoot.getCanonicalPath, projectRootPath)
         val moduleNode = new DataNode[ModuleData](ProjectKeys.MODULE, moduleData, projectNode)
         val contentRootData = new ContentRootData(BSP.ProjectSystemId, projectRoot.getCanonicalPath)
         val contentRootDataNode = new DataNode[ContentRootData](ProjectKeys.CONTENT_ROOT, contentRootData, moduleNode)

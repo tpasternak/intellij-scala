@@ -31,7 +31,7 @@ import javax.swing.Icon
 import org.jetbrains.bsp._
 import org.jetbrains.bsp.protocol.BspConnectionConfig
 import org.jetbrains.bsp.settings._
-import org.jetbrains.sbt.project.{MillProjectImportProvider, SbtProjectImportProvider}
+import org.jetbrains.sbt.project.{MillProjectImportProvider, PantsBspProjectImportProvider, SbtProjectImportProvider}
 
 class BspProjectImportBuilder
   extends AbstractExternalProjectImportBuilder[BspImportControl](
@@ -169,7 +169,8 @@ class BspProjectImportProvider(builder: BspProjectImportBuilder)
 
   override def canImport(fileOrDirectory: VirtualFile, project: Project): Boolean =
     BspProjectOpenProcessor.canOpenProject(fileOrDirectory) ||
-      SbtProjectImportProvider.canImport(fileOrDirectory)
+      SbtProjectImportProvider.canImport(fileOrDirectory) ||
+      PantsBspProjectImportProvider.canImport(fileOrDirectory)
 
   override def createSteps(context: WizardContext): Array[ModuleWizardStep] =
     ModuleWizardStep.EMPTY_ARRAY
