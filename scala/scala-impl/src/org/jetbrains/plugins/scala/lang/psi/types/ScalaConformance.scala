@@ -1009,9 +1009,10 @@ trait ScalaConformance extends api.Conformance with TypeVariableUnification {
       checkEquiv()
       if (result != null) return
 
-      rightVisitor = new ExistentialSimplification with ExistentialArgumentVisitor
-        with ParameterizedExistentialArgumentVisitor with OtherNonvalueTypesVisitor with NothingNullVisitor
-         with TypeParameterTypeVisitor with ThisVisitor {}
+      rightVisitor =
+        new ExistentialArgumentVisitor with ParameterizedExistentialArgumentVisitor
+          with OtherNonvalueTypesVisitor with NothingNullVisitor
+          with TypeParameterTypeVisitor with ThisVisitor with DesignatorVisitor {}
       r.visitType(rightVisitor)
       if (result != null) return
 
@@ -1024,6 +1025,13 @@ trait ScalaConformance extends api.Conformance with TypeVariableUnification {
         (remapper.remapExistentials(e.quantified), remapper.remapped)
       }
 
+      undefines.foreach { undef =>
+        val tparam = undef.typeParameter
+        constraints = constraints
+          .withLower(tparam.typeParamId, tparam.lowerType)
+          .withUpper(tparam.typeParamId, tparam.upperType)
+      }
+
       val skolemizeExistentialsOnTheRight = r match {
         case etpe: ScExistentialType =>
           new ExistentialArgumentsToTypeParameters(etpe.wildcards, TypeParameterType(_))
@@ -1031,50 +1039,16 @@ trait ScalaConformance extends api.Conformance with TypeVariableUnification {
         case t => t
       }
 
-      conformsInner(updatedWithUndefinedTypes, skolemizeExistentialsOnTheRight, HashSet.empty, constraints) match {
-        case unSubst @ ConstraintSystem(solvingSubstitutor) =>
-          for (un <- undefines if result == null) {
-            val solvedType = solvingSubstitutor(un)
-
-            val lowerBoundSubsted = solvingSubstitutor(un.typeParameter.lowerType.unpackedType)
-            var t = conformsInner(solvedType, lowerBoundSubsted, constraints = constraints)
-            if (solvedType != un && t.isLeft) {
-              result = ConstraintsResult.Left
-              return
-            }
-
-            constraints = t.constraints
-            val upperBoundSubsted = solvingSubstitutor(un.typeParameter.upperType.unpackedType)
-            t = conformsInner(upperBoundSubsted, solvedType, constraints = constraints)
-
-            if (solvedType != un && t.isLeft) {
-              result = ConstraintsResult.Left
-              return
-            }
-            constraints = t.constraints
-          }
-
-          if (result == null) {
-            //ignore undefined types from existential arguments
-            val typeParamIds = undefines
-              .map(_.typeParameter.typeParamId)
-              .toSet
-
-            constraints += unSubst.removeTypeParamIds(typeParamIds)
-            result = constraints
-          }
-        case _ => result = ConstraintsResult.Left
-      }
-      if (result != null) return
-
-      rightVisitor = new DesignatorVisitor {}
-      r.visitType(rightVisitor)
-      if (result != null) return
-
-      val simplified = e.simplify()
-      if (simplified != l) {
-        result = conformsInner(simplified, r, visited, constraints, checkWeak)
-      }
+      result =
+        conformsInner(
+          updatedWithUndefinedTypes,
+          skolemizeExistentialsOnTheRight,
+          HashSet.empty,
+          constraints
+        ) match {
+          case ConstraintSystem(_) => constraints
+          case _                   => ConstraintsResult.Left
+        }
     }
 
     override def visitThisType(t: ScThisType): Unit = {
