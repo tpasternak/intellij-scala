@@ -68,9 +68,10 @@ private[completion] final class LocallyImportableMembersFinder(override protecte
 
     override protected def buildItem(lookupItem: ScalaLookupItem,
                                      shouldImport: Boolean): Option[ScalaLookupItem] =
-      if (shouldImport)
+      if (shouldImport) {
+        lookupItem.addLookupStrings(classToImport.name) // todo should be actually implemented as a chain
         super.buildItem(lookupItem, shouldImport)
-      else
+      } else
         None
   }
 

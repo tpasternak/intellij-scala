@@ -405,6 +405,34 @@ class ScalaGlobalMemberCompletionTest extends ScalaCodeInsightTestBase {
     )
   }
 
+  def testCompanionObjectValueAdditionalLookupString(): Unit = doRawCompletionTest(
+    fileText =
+      s"""class Foo {
+         |  F$CARET
+         |}
+         |
+         |object Foo {
+         |  val foo = 42
+         |}
+         |""".stripMargin,
+    resultText =
+      s"""class Foo {
+         |  Foo.foo$CARET
+         |}
+         |
+         |object Foo {
+         |  val foo = 42
+         |}
+         |""".stripMargin
+  ) { lookup =>
+    import collection.JavaConverters._
+    lookup.getAllLookupStrings.asScala == Set("foo", "Foo") &&
+      hasItemText(lookup, "foo")(
+        itemText = "Foo.foo",
+        tailText = " <default>"
+      )
+  }
+
   def testCompanionObjectTypeAlias(): Unit = checkNoBasicCompletion(
     fileText =
       s"""class Foo {
