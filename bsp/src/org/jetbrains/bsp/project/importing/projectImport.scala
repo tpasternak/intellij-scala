@@ -32,15 +32,14 @@ import org.jetbrains.bsp._
 import org.jetbrains.bsp.protocol.BspConnectionConfig
 import org.jetbrains.bsp.settings.BspProjectSettings._
 import org.jetbrains.bsp.settings._
-import org.jetbrains.sbt.project.{MillProjectImportProvider, SbtProjectImportProvider}
+import org.jetbrains.sbt.project.{MillProjectImportProvider, FastpassProjectImportProvider, SbtProjectImportProvider}
 
 class BspProjectImportBuilder
   extends AbstractExternalProjectImportBuilder[BspImportControl](
     ProjectDataManager.getInstance(),
     BspImportControlFactory,
     BSP.ProjectSystemId) {
-
-
+  private[importing] var bspWorkspace: Option[String] = None
   private[importing] var preImportConfig: PreImportConfig = AutoPreImport
   private[importing] var serverConfig: BspServerConfig = AutoConfig
 
@@ -62,10 +61,17 @@ class BspProjectImportBuilder
 
   private def applyBspSetupSettings(project: Project): Unit = {
     val bspSettings = BspUtil.bspSettings(project)
-    val systemProjectPath = FileUtil.toSystemDependentName(getFileToImport)
-    val projectSettings = bspSettings.getLinkedProjectSettings(systemProjectPath)
+    val projectSettings = bspSettings.getLinkedProjectSettings(getBspWorkspace)
     projectSettings.setPreImportConfig(preImportConfig)
     projectSettings.setServerConfig(serverConfig)
+  }
+
+  def setBspWorkspace(str: String): Unit = {
+    this.bspWorkspace = Some(str)
+  }
+
+  def getBspWorkspace: String = {
+    bspWorkspace.getOrElse(getFileToImport)
   }
 
   def setPreImportConfig(preImportConfig: PreImportConfig): Unit =
@@ -95,7 +101,7 @@ class BspProjectImportBuilder
                       model: ModifiableModuleModel,
                       modulesProvider: ModulesProvider,
                       artifactModel: ModifiableArtifactModel): util.List[Module] = {
-    linkAndRefreshProject(getFileToImport, project)
+    linkAndRefreshProject(getBspWorkspace, project)
     applyBspSetupSettings(project)
     Collections.emptyList()
   }
@@ -203,7 +209,8 @@ class BspProjectImportProvider(builder: BspProjectImportBuilder)
 
   override def canImport(fileOrDirectory: VirtualFile, project: Project): Boolean =
     BspProjectOpenProcessor.canOpenProject(fileOrDirectory) ||
-      SbtProjectImportProvider.canImport(fileOrDirectory)
+      SbtProjectImportProvider.canImport(fileOrDirectory) ||
+      FastpassProjectImportProvider.canImport(fileOrDirectory)
 
   override def createSteps(context: WizardContext): Array[ModuleWizardStep] = {
     builder.reset()

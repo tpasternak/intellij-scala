@@ -11,13 +11,16 @@ import com.intellij.openapi.externalSystem.settings._
 import com.intellij.openapi.externalSystem.util.ExternalSystemUiUtil._
 import com.intellij.openapi.externalSystem.util.{ExternalSystemSettingsControl, ExternalSystemUiUtil, PaintAwarePanel}
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.util.messages.Topic
 import com.intellij.util.xmlb.Converter
 import com.intellij.util.xmlb.annotations.{OptionTag, XCollection}
 import javax.swing.JCheckBox
+import org.jetbrains.bsp.project.importing.setup.FastpassConfigSetup
 import org.jetbrains.bsp.settings.BspProjectSettings.{AutoConfig, AutoPreImport, BspServerConfig, BspServerConfigConverter, PreImportConfig, PreImportConfigConverter}
 import org.jetbrains.bsp.{BspBundle, _}
 import org.jetbrains.plugins.scala.project.ProjectExt
+import org.jetbrains.sbt.project.FastpassProjectImportProvider
 
 import scala.beans.BeanProperty
 

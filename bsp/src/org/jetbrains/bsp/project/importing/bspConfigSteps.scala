@@ -2,6 +2,7 @@ package org.jetbrains.bsp.project.importing
 
 import java.awt.BorderLayout
 import java.io.File
+import java.nio.file.Paths
 
 import ch.epfl.scala.bsp4j.BspConnectionDetails
 import com.intellij.ide.util.projectWizard.{ModuleWizardStep, WizardContext}
@@ -16,13 +17,13 @@ import org.jetbrains.annotations.Nls
 import org.jetbrains.bsp.{BspBundle, BspUtil}
 import org.jetbrains.bsp.project.importing.BspSetupConfigStep.ConfigSetupTask
 import org.jetbrains.bsp.project.importing.bspConfigSteps._
-import org.jetbrains.bsp.project.importing.setup.{BspConfigSetup, MillConfigSetup, NoConfigSetup, SbtConfigSetup}
+import org.jetbrains.bsp.project.importing.setup.{BspConfigSetup, FastpassConfigSetup, MillConfigSetup, NoConfigSetup, SbtConfigSetup}
 import org.jetbrains.bsp.protocol.BspConnectionConfig
 import org.jetbrains.bsp.settings.BspProjectSettings._
 import org.jetbrains.plugins.scala.build.IndicatorReporter
 import org.jetbrains.plugins.scala.project.Version
 import org.jetbrains.sbt.SbtUtil._
-import org.jetbrains.sbt.project.{MillProjectImportProvider, SbtProjectImportProvider}
+import org.jetbrains.sbt.project.{FastpassProjectImportProvider, MillProjectImportProvider, SbtProjectImportProvider}
 
 object bspConfigSteps {
 
@@ -32,6 +33,7 @@ object bspConfigSteps {
   case object BloopSetup extends ConfigSetup
   case object BloopSbtSetup extends ConfigSetup
   case object MillSetup extends ConfigSetup
+  case object FastpassSetup extends ConfigSetup
 
   private[importing] def configChoiceName(configs: ConfigSetup) = configs match {
     case NoSetup => BspBundle.message("bsp.config.steps.choice.no.setup")
@@ -39,6 +41,7 @@ object bspConfigSteps {
     case BloopSetup => BspBundle.message("bsp.config.steps.choice.bloop")
     case BloopSbtSetup => BspBundle.message("bsp.config.steps.choice.sbt.with.bloop")
     case MillSetup => BspBundle.message("bsp.config.steps.choice.mill")
+    case FastpassSetup => BspBundle.message("bsp.config.steps.choice.fastpass")
   }
 
   private[importing] def configName(config: BspConnectionDetails) =
@@ -83,27 +86,38 @@ object bspConfigSteps {
     if (workspaceBspConfigs.size == 1) {
       builder.setPreImportConfig(NoPreImport)
       builder.setServerConfig(BspConfigFile(workspaceBspConfigs.head._1.toPath))
+      builder.setBspWorkspace(workspace.getAbsolutePath)
       new NoConfigSetup
     } else configSetup match {
         case bspConfigSteps.NoSetup =>
           builder.setPreImportConfig(AutoPreImport)
           builder.setServerConfig(AutoConfig)
+          builder.setBspWorkspace(workspace.getAbsolutePath)
           new NoConfigSetup
         case bspConfigSteps.BloopSetup =>
           builder.setPreImportConfig(NoPreImport)
           builder.setServerConfig(BloopConfig)
+          builder.setBspWorkspace(workspace.getAbsolutePath)
           new NoConfigSetup
         case bspConfigSteps.BloopSbtSetup =>
           builder.setPreImportConfig(BloopSbtPreImport)
           builder.setServerConfig(BloopConfig)
+          builder.setBspWorkspace(workspace.getAbsolutePath)
           new NoConfigSetup
         case bspConfigSteps.SbtSetup =>
           builder.setPreImportConfig(NoPreImport)
+          builder.setBspWorkspace(workspace.getAbsolutePath)
           // server config to be set in next step
           SbtConfigSetup(workspace)
         case bspConfigSteps.MillSetup =>
           builder.setPreImportConfig(NoPreImport)
+          builder.setBspWorkspace(workspace.getAbsolutePath)
           MillConfigSetup(workspace)
+        case bspConfigSteps.FastpassSetup =>
+          builder.setPreImportConfig(NoPreImport)
+          val bspWorkspace = FastpassConfigSetup.computeBspWorkspace(workspace)
+          builder.setBspWorkspace(bspWorkspace)
+          FastpassConfigSetup.create(workspace).fold(throw _, identity)
       }
   }
 
@@ -129,8 +143,13 @@ object bspConfigSteps {
       if (BspUtil.bloopConfigDir(workspace).isDefined) List(BloopSetup)
       else Nil
 
+    val fastpassChoice = if(FastpassProjectImportProvider.canImport(vfile))
+      List(FastpassSetup)
+    else
+      Nil
 
-    (sbtChoice ++ millChoice ++ bloopChoice).distinct
+
+    (sbtChoice ++ millChoice ++ bloopChoice ++ fastpassChoice).distinct
   }
 }
 
@@ -199,6 +218,8 @@ class BspSetupConfigStep(context: WizardContext, builder: BspProjectImportBuilde
   override def onWizardFinished(): Unit = {
     // TODO this spawns an indicator window which is not nice.
     // show a live log in the window or something?
+    updateDataModel()
+
     val task = new ConfigSetupTask(runSetupTask)
     task.queue()
   }
