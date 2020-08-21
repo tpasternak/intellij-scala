@@ -117,6 +117,7 @@ object bspConfigSteps {
           builder.setPreImportConfig(NoPreImport)
           val bspWorkspace = FastpassConfigSetup.computeBspWorkspace(workspace)
           builder.setBspWorkspace(bspWorkspace)
+          builder.setOriginallySelectedFile(workspace.getAbsolutePath)
           FastpassConfigSetup.create(workspace).fold(throw _, identity)
       }
   }
@@ -158,7 +159,7 @@ class BspSetupConfigStep(context: WizardContext, builder: BspProjectImportBuilde
 
   private var runSetupTask: BspConfigSetup = new NoConfigSetup
 
-  private val workspace = context.getProjectDirectory.toFile
+  private val workspace: File = Paths.get(builder.getOriginallySelectedFile).toFile
   private val workspaceBspConfigs = BspConnectionConfig.workspaceBspConfigs(workspace)
   private lazy val workspaceSetupConfigs: List[ConfigSetup] = workspaceSetupChoices(workspace)
 

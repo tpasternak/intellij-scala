@@ -16,7 +16,8 @@ object FastpassConfigSetup {
 
   def computeBspWorkspace(file: File): String = {
     val projectName = file.getName
-    val bspWorkspace = Paths.get(file.getParentFile.getParentFile.getAbsolutePath).resolve("bsp-projects").resolve(projectName)
+    val pantsRoot = FastpassProjectImportProvider.pantsRoot(LocalFileSystem.getInstance().findFileByIoFile(file))
+    val bspWorkspace = pantsRoot.get.getParent.toNioPath.resolve("bsp-projects").resolve(projectName)
     bspWorkspace.toString
   }
 
@@ -35,6 +36,7 @@ object FastpassConfigSetup {
           "scala.meta.fastpass.Fastpass",
           "--",
           "create",
+          s"--name=${relativeDir.getFileName}",
           relativeDir.toString + "::"
         )
         processBuilder.directory(new File(pantsRoot.toNioPath.toString))

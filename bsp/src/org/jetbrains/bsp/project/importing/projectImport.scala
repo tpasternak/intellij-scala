@@ -40,6 +40,7 @@ class BspProjectImportBuilder
     BspImportControlFactory,
     BSP.ProjectSystemId) {
   private[importing] var bspWorkspace: Option[String] = None
+  private[importing] var originallySelectedFile: Option[String] = None
   private[importing] var preImportConfig: PreImportConfig = AutoPreImport
   private[importing] var serverConfig: BspServerConfig = AutoConfig
 
@@ -74,6 +75,12 @@ class BspProjectImportBuilder
     bspWorkspace.getOrElse(getFileToImport)
   }
 
+  def getOriginallySelectedFile: String =
+    this.originallySelectedFile.get
+
+  def setOriginallySelectedFile(path: String): Unit =
+    this.originallySelectedFile = Some(path)
+
   def setPreImportConfig(preImportConfig: PreImportConfig): Unit =
     this.preImportConfig = preImportConfig
 
@@ -83,18 +90,22 @@ class BspProjectImportBuilder
   override def doPrepare(context: WizardContext): Unit = {}
   override def beforeCommit(dataNode: DataNode[ProjectData], project: Project): Unit = {}
   override def getExternalProjectConfigToUse(file: File): File = file
-  override def applyExtraSettings(context: WizardContext): Unit = {}
+  override def applyExtraSettings(context: WizardContext): Unit = {
+    val x = 1
+  }
   override def getName: String = BSP.Name
   override def getIcon: Icon = BSP.Icon
 
   override def setFileToImport(path: String): Unit = {
-    val localForImport = LocalFileSystem.getInstance()
-    val file = localForImport.refreshAndFindFileByPath(path)
+    super.setFileToImport(getBspWorkspace)
+    this.bspWorkspace
+//  val localForImport = LocalFileSystem.getInstance()
+//  val file = localForImport.refreshAndFindFileByPath(path)
 
-    Option(file).foreach { f =>
-      val path = ProjectImportProvider.getDefaultPath(f)
-      super.setFileToImport(path)
-    }
+//  Option(file).foreach { f =>
+//    val path = ProjectImportProvider.getDefaultPath(f)
+//    super.setFileToImport(path)
+//    }
   }
 
   override def commit(project: Project,
@@ -215,8 +226,10 @@ class BspProjectImportProvider(builder: BspProjectImportBuilder)
   override def createSteps(context: WizardContext): Array[ModuleWizardStep] = {
     builder.reset()
     builder.autoConfigure(context.getProjectDirectory.toFile)
-
-    Array(
+    context.setProjectFileDirectory(builder.getBspWorkspace)
+    builder.setFileToImport(builder.getBspWorkspace)
+//     builder.ensureProjectIsDefined(context)
+    super.createSteps(context) ++ Array(
       new BspSetupConfigStep(context, builder),
       new BspChooseConfigStep(context, builder)
     )
